@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz 2P - Emprendimientos Universitarios</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    line-height: 1.5;
+    padding: 12px;
+  }
+  .app { max-width: 920px; margin: 0 auto; }
+
+  /* ---- Barra superior ---- */
+  .topbar {
+    background: #0C3F52;
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .topbar h1 { font-size: 17px; font-weight: 600; }
+  .topbar .rep { font-size: 13px; color: #7FD8E8; }
+
+  /* ---- Barra de stats ---- */
+  .statsbar {
+    background: #001D2B;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 14px;
+  }
+  .statsbar .item { display: flex; align-items: center; gap: 6px; }
+  .statsbar .num { font-weight: 700; font-size: 16px; }
+  .ac .num { color: #4ade80; }
+  .fa .num { color: #f87171; }
+  .pt .num { color: #7FD8E8; }
+
+  /* ---- Layout principal ---- */
+  .main {
+    display: flex;
+    gap: 0;
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .qzone { flex: 1; padding: 24px; min-width: 0; }
+  .sidepanel {
+    width: 210px;
+    background: #f7f9fa;
+    border-left: 1px solid #e2e8f0;
+    padding: 16px 12px;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .sidepanel h3 { font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 10px; letter-spacing: 0.5px; }
+  .qlist-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px; font-size: 13px;
+    cursor: pointer; margin-bottom: 3px; transition: background 0.15s;
+  }
+  .qlist-item:hover { background: #e8edf0; }
+  .qlist-item.current { background: #d0e8ef; font-weight: 600; }
+  .qlist-item .ico { width: 18px; text-align: center; }
+  .qlist-item.ok .ico { color: #22c55e; }
+  .qlist-item.bad .ico { color: #ef4444; }
+  .qlist-item.pending .ico { color: #cbd5e1; }
+
+  /* ---- Pregunta ---- */
+  .tema-badge {
+    display: inline-block; background: #e0f2f7; color: #0C3F52;
+    font-size: 12px; font-weight: 600; padding: 3px 10px;
+    border-radius: 20px; margin-bottom: 12px;
+  }
+  .multi-badge {
+    display: inline-block; background: #fef3c7; color: #92400e;
+    font-size: 11px; font-weight: 600; padding: 3px 10px;
+    border-radius: 20px; margin-bottom: 12px; margin-left: 6px;
+  }
+  .qtext { font-size: 17px; font-weight: 500; margin-bottom: 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 13px 16px; border: 1.5px solid #e2e8f0;
+    border-radius: 10px; cursor: pointer; transition: all 0.15s;
+    background: #fff;
+  }
+  .opt:hover { border-color: #7FD8E8; background: #f7fcfd; }
+  .opt.selected { border-color: #0C3F52; background: #e0f2f7; }
+  .opt.correct { border-color: #22c55e; background: #dcfce7; }
+  .opt.wrong { border-color: #ef4444; background: #fee2e2; }
+  .opt .marker {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #94a3b8; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; margin-top: 1px;
+  }
+  .opt.multi .marker { border-radius: 5px; }
+  .opt.selected .marker { border-color: #0C3F52; background: #0C3F52; color: #fff; }
+  .opt.correct .marker { border-color: #22c55e; background: #22c55e; color: #fff; }
+  .opt.wrong .marker { border-color: #ef4444; background: #ef4444; color: #fff; }
+  .opt .otext { flex: 1; font-size: 15px; }
+
+  /* ---- Justificación ---- */
+  .justif {
+    margin-top: 18px; padding: 16px 18px;
+    background: #f3f0fa; border-left: 4px solid #7c5cbf;
+    border-radius: 8px; font-size: 14px; display: none;
+  }
+  .justif.show { display: block; }
+  .justif .jt { font-weight: 700; color: #5b3f9e; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ---- Botones ---- */
+  .actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+  .btn {
+    padding: 11px 22px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-postpone { background: #fef3c7; color: #92400e; }
+  .btn-postpone:hover { background: #fde68a; }
+  .btn-skip { background: #f1f5f9; color: #475569; }
+  .btn-skip:hover { background: #e2e8f0; }
+  .btn-answer { background: #0C3F52; color: #fff; }
+  .btn-answer:hover { background: #0a3444; }
+  .btn-next { background: #22c55e; color: #fff; }
+  .btn-next:hover { background: #16a34a; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ---- Pantalla de inicio ---- */
+  .start {
+    background: #fff; border-radius: 12px; padding: 36px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08); text-align: center;
+  }
+  .start h1 { font-size: 24px; color: #0C3F52; margin-bottom: 8px; }
+  .start .sub { color: #64748b; margin-bottom: 28px; font-size: 15px; }
+  .config { text-align: left; max-width: 480px; margin: 0 auto 24px; }
+  .config .grp { margin-bottom: 20px; }
+  .config .grp > label { display: block; font-weight: 600; margin-bottom: 10px; color: #334155; }
+  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    padding: 8px 16px; border: 1.5px solid #cbd5e1; border-radius: 20px;
+    cursor: pointer; font-size: 14px; background: #fff; transition: all 0.15s;
+  }
+  .chip:hover { border-color: #7FD8E8; }
+  .chip.active { background: #0C3F52; color: #fff; border-color: #0C3F52; }
+  .btn-big {
+    background: #0C3F52; color: #fff; border: none; padding: 14px 40px;
+    border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-big:hover { background: #0a3444; transform: translateY(-1px); }
+
+  .hint { font-size: 12px; color: #94a3b8; margin-top: 20px; line-height: 1.5; }
+
+  /* ---- Tarjetas de modo ---- */
+  .mode-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 14px; max-width: 560px; margin: 0 auto 8px;
+  }
+  .mode-card {
+    border: 1.5px solid #e2e8f0; border-radius: 12px;
+    padding: 22px 18px; cursor: pointer; text-align: center;
+    transition: all 0.15s; background: #fff;
+  }
+  .mode-card:hover { border-color: #0C3F52; background: #f7fcfd; transform: translateY(-2px); box-shadow: 0 4px 14px rgba(12,63,82,0.12); }
+  .mode-card.secondary { background: #f7f9fa; }
+  .mode-card.secondary:hover { border-color: #7c5cbf; background: #f9f7fd; box-shadow: 0 4px 14px rgba(124,92,191,0.12); }
+  .mode-card.disabled { opacity: 0.5; cursor: not-allowed; }
+  .mode-card.disabled:hover { border-color: #e2e8f0; background: #fff; transform: none; box-shadow: none; }
+  .mode-ico { font-size: 30px; margin-bottom: 8px; }
+  .mode-title { font-weight: 700; font-size: 16px; color: #0C3F52; margin-bottom: 5px; }
+  .mode-desc { font-size: 13px; color: #64748b; line-height: 1.4; }
+
+  /* ---- Pantalla de rendimiento ---- */
+  .stats-body {
+    background: #fff; border-radius: 0 0 12px 12px;
+    padding: 20px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .stats-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .stats-note { font-size: 13px; color: #64748b; }
+  .table-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 10px; }
+  .stats-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .stats-table thead th {
+    background: #0C3F52; color: #fff; padding: 10px 12px;
+    text-align: left; font-weight: 600; position: sticky; top: 0;
+  }
+  .stats-table tbody tr { border-bottom: 1px solid #eef2f5; }
+  .stats-table tbody tr:last-child { border-bottom: none; }
+  .stats-table tbody tr:hover { background: #f7fcfd; }
+  .stats-table td { padding: 10px 12px; vertical-align: middle; }
+  .q-cell { max-width: 420px; color: #334155; }
+  .tema-mini { display: inline-block; background: #e0f2f7; color: #0C3F52; font-size: 11px; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
+  .acc-pill { display: inline-block; font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 12px; min-width: 46px; }
+  .acc-hi { background: #dcfce7; color: #15803d; }
+  .acc-mid { background: #fef3c7; color: #92400e; }
+  .acc-lo { background: #fee2e2; color: #b91c1c; }
+
+  /* ---- Pantalla final ---- */
+  .results {
+    background: #fff; border-radius: 12px; padding: 36px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08); text-align: center;
+  }
+  .results h1 { font-size: 26px; color: #0C3F52; margin-bottom: 16px; }
+  .score-circle {
+    width: 140px; height: 140px; border-radius: 50%;
+    margin: 0 auto 24px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border: 8px solid #0C3F52; background: #f0f9fb;
+  }
+  .score-circle .pct { font-size: 36px; font-weight: 700; color: #0C3F52; }
+  .score-circle .lbl { font-size: 13px; color: #64748b; }
+  .res-detail { display: flex; gap: 20px; justify-content: center; margin-bottom: 28px; flex-wrap: wrap; }
+  .res-detail .rd { text-align: center; }
+  .res-detail .rd .n { font-size: 22px; font-weight: 700; }
+  .res-detail .rd .l { font-size: 12px; color: #64748b; }
+
+  @media (max-width: 700px) {
+    .sidepanel { display: none; }
+    .qtext { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const BANK = [{"tema": "Modelos Disruptivos", "tipo": "multi", "enunciado": "Selecciona tres. ¿Cuál de las siguientes afirmaciones presentan características de un modelo de negocio disruptivo?", "opciones": ["Puede enfocarse en segmentos desatendidos o no valorados", "Se apoya en tecnologías emergentes o combinaciones novedosas", "Busca desafiar a los líderes de mercado con nuevas formas de crear valor", "Se centra en maximizar la rentabilidad de los clientes premium existentes"], "correctas": [0, 1, 2], "justificacion": "Un modelo disruptivo ataca segmentos que los líderes desatienden (por baja rentabilidad inicial), se apoya en tecnología emergente o combinaciones nuevas, y desafía a los incumbentes con formas distintas de crear valor. Justamente NO se enfoca en los clientes premium más rentables (eso hacen los incumbentes)."}, {"tema": "Ágil", "tipo": "single", "enunciado": "Léeme es una app de intercambio de libros creada por estudiantes. Aunque su plan inicial priorizaba un Chat interno, descubren que los usuarios valoran más un sistema de geolocalización para coordinar entregas. ¿Qué decisión ágil debe tomar el equipo?", "opciones": ["Reorganizar el Backlog para dar prioridad a la Geolocalización, ya que aporta más valor a los usuarios", "Mantener el plan original del Chat porque ya estaba definido en la planificación", "Desarrollar ambas funciones en paralelo sin cambiar prioridades", "Postergar toda decisión hasta terminar el desarrollo del Chat"], "correctas": [0], "justificacion": "La agilidad implica reordenar el backlog según el valor real que se descubre. Si los usuarios valoran más la geolocalización, esa función sube de prioridad. Aferrarse al plan original contradice el principio ágil de adaptación al cambio."}, {"tema": "Evaluación de Impacto", "tipo": "single", "enunciado": "Según el Observatorio Vasco del Tercer Sector Social, ¿cuáles son algunas de las variables que deben considerarse para construir un sistema de evaluación de impacto más integral?", "opciones": ["Motivación, objetivo y utilidad de la medición + tipo de entidad", "Únicamente el retorno financiero de la inversión", "Cantidad de empleados y facturación anual", "Solo la satisfacción del cliente final"], "correctas": [0], "justificacion": "El sistema integral considera por qué se mide (motivación), para qué (objetivo), qué uso tendrá (utilidad) y qué tipo de entidad lo aplica. No se reduce solo a lo financiero ni a métricas operativas aisladas."}, {"tema": "Monetización / WTP", "tipo": "single", "enunciado": "Un emprendimiento ofrece kits de huerta urbana que le permiten ahorrar al cliente en verduras frescas, pero antes decide que analizará la WTP para evitar incorporar productos innecesarios. Por esta razón, ¿qué define primero?", "opciones": ["Cuánto estaría dispuesto a pagar un segmento urbano por su kit y diseñar el producto en torno a ese valor", "El diseño final del producto y después evalúa el precio", "La cantidad de unidades a producir en el primer año", "El canal de distribución antes de conocer al cliente"], "correctas": [0], "justificacion": "WTP (Willingness To Pay / disposición a pagar) implica definir primero cuánto valora y pagaría el cliente, y recién después diseñar el producto en torno a ese valor. Esto evita cargar el producto con features que nadie pagará."}, {"tema": "Roadmap Prospectivo", "tipo": "single", "enunciado": "¿Qué implica el carácter iterativo y no lineal del crecimiento sostenible en un Roadmap prospectivo?", "opciones": ["Las fases de escalamiento se corrigen y adaptan a medida que se aprenden en el camino", "El crecimiento sigue una secuencia fija que no puede modificarse", "Se define un único escenario y se ejecuta sin revisiones", "Cada fase debe completarse totalmente antes de aprender algo nuevo"], "correctas": [0], "justificacion": "Iterativo y no lineal significa que las fases no siguen una línea recta fija: se corrigen y adaptan según lo que se va aprendiendo. Un roadmap rígido con un solo escenario contradice esta lógica."}, {"tema": "Reinvención de MdN", "tipo": "single", "enunciado": "Según Johnson, Christensen y Kagermann, ¿qué implica la reinvención de un modelo de negocio?", "opciones": ["El diseño de cómo una empresa crea, entrega y captura valor", "Únicamente cambiar el logo y la identidad visual", "Reducir costos operativos sin tocar la propuesta de valor", "Copiar el modelo de un competidor exitoso"], "correctas": [0], "justificacion": "Para estos autores, un modelo de negocio (y su reinvención) es el diseño de cómo la empresa CREA, ENTREGA y CAPTURA valor. Es una definición estructural, no cosmética ni de simple reducción de costos."}, {"tema": "Roadmap Sostenible", "tipo": "single", "enunciado": "Uali es un startup que aplica robótica, IoT e IA para monitorear activos en la industria energética mediante drones. Para sostener su crecimiento en el largo plazo, integrando impacto ambiental y eficiencia operativa, ¿cuál estrategia sería la más alineada con un roadmap sostenible?", "opciones": ["Implementar mejoras continuas en AI para optimizar rutas de los drones y reducir el uso energético", "Aumentar la cantidad de drones sin considerar el consumo energético", "Priorizar solo la rentabilidad de corto plazo", "Reducir la inversión en tecnología para bajar costos"], "correctas": [0], "justificacion": "Un roadmap sostenible integra eficiencia operativa + impacto ambiental. Optimizar rutas con AI mejora ambos: reduce consumo energético y mantiene la eficiencia. Escalar sin medir el impacto o mirar solo el corto plazo no es sostenible."}, {"tema": "Impacto / ONU", "tipo": "single", "enunciado": "¿Cuál de estas opciones describe de manera más precisa el concepto de impacto según la ONU y la gestión de proyectos sostenibles?", "opciones": ["Transformaciones significativas y sostenidas que un proyecto genera en las personas, comunidades o entorno natural", "El beneficio económico inmediato del proyecto", "La cantidad de productos vendidos en el primer trimestre", "El reconocimiento de marca en redes sociales"], "correctas": [0], "justificacion": "Para la ONU, impacto son transformaciones SIGNIFICATIVAS y SOSTENIDAS en personas, comunidades o el entorno. La clave es que sean profundas y duraderas, no efectos económicos inmediatos ni métricas de vanidad."}, {"tema": "Monetización", "tipo": "single", "enunciado": "¿Qué implica un enfoque de monetización centrado en el usuario?", "opciones": ["Ajustar productos y servicios según la disposición a pagar y necesidades reales del cliente", "Fijar el precio más alto posible del mercado", "Copiar la estructura de precios de la competencia", "Cobrar lo mismo a todos los segmentos sin distinción"], "correctas": [0], "justificacion": "Centrado en el usuario = el precio y la oferta se ajustan a lo que el cliente valora, necesita y está dispuesto a pagar. No parte del costo ni de la competencia, sino del valor percibido por el usuario."}, {"tema": "Ágil", "tipo": "single", "enunciado": "Legal Tech Campus, un proyecto de asesoría jurídica digital, enfrenta un cambio inesperado en la normativa sobre protección de datos. El equipo responde ajustando su software. ¿Qué capacidad ágil refleja esta acción?", "opciones": ["Flexibilidad de adaptación rápida a un nuevo contexto regulatorio", "Rigidez en la ejecución del plan original", "Resistencia al cambio normativo", "Priorización del cronograma sobre la realidad del entorno"], "correctas": [0], "justificacion": "Adaptar el software rápido ante un cambio regulatorio es flexibilidad y adaptación, capacidad central de la agilidad: responder al cambio por sobre seguir un plan fijo."}, {"tema": "Arquetipos de Futuro", "tipo": "single", "enunciado": "Una startup que diseña bicicletas eléctricas compartidas busca definir su modelo de monetización considerando distintos arquetipos de futuros. ¿Qué enfoque debería priorizar si planifica bajo el arquetipo de futuro caracterizado por la transformación?", "opciones": ["Crear un ecosistema de innovación abierta para anticipar cambios y generar nuevas oportunidades", "Mantener el modelo actual sin modificaciones", "Optimizar gradualmente los procesos existentes", "Reducir la oferta a un único servicio estándar"], "correctas": [0], "justificacion": "El arquetipo de TRANSFORMACIÓN implica cambios profundos y disruptivos. La innovación abierta permite anticipar y generar oportunidades nuevas, alineado con transformar. Optimizar gradualmente correspondería al arquetipo de Continuación, no de Transformación."}, {"tema": "Reinvención de MdN", "tipo": "single", "enunciado": "¿Qué papel cumple la propuesta de valor en un proceso de reinvención del modelo de negocio?", "opciones": ["Sirve como base para explorar nuevas formas de satisfacer necesidades del cliente", "Es un elemento decorativo del plan de negocios", "Solo importa para el área de marketing", "Se define al final, después de fijar los precios"], "correctas": [0], "justificacion": "La propuesta de valor es el punto de partida: desde ahí se exploran nuevas maneras de resolver necesidades del cliente. Es el corazón de la reinvención, no un accesorio."}, {"tema": "Organización Teal", "tipo": "single", "enunciado": "La startup NexoSalud busca escalar su plataforma digital de bienestar inspirándose en el modelo Teal de Laloux. ¿Cuál de las siguientes decisiones refleja con mayor fidelidad esta orientación?", "opciones": ["Implementar un esquema de autogestión en el que los equipos tomen decisiones descentralizadas", "Centralizar todas las decisiones en la gerencia general", "Establecer una jerarquía rígida de mando y control", "Eliminar toda estructura y trabajar sin coordinación"], "correctas": [0], "justificacion": "El modelo Teal se basa en autogestión, propósito evolutivo y plenitud. La autogestión con decisiones descentralizadas es su rasgo distintivo. Centralizar o imponer jerarquía rígida es lo opuesto (modelos Ámbar/Naranja)."}, {"tema": "Comunicación Poderosa", "tipo": "single", "enunciado": "¿Cuál de las siguientes opciones refleja mejor la dimensión reflexiva de la comunicación poderosa?", "opciones": ["Estimular la autocrítica y el aprendizaje autónomo", "Transmitir información técnica sin pausas", "Imponer una única visión sin apertura al diálogo", "Evitar cualquier tipo de feedback del receptor"], "correctas": [0], "justificacion": "La dimensión reflexiva apunta a la introspección: estimula la autocrítica y el aprendizaje autónomo. Se trata de generar reflexión, no de transmitir datos de forma unidireccional."}, {"tema": "Roadmap Prospectivo", "tipo": "single", "enunciado": "¿Qué busca principalmente un roadmap prospectivo para la escalabilidad?", "opciones": ["Organizar fases de crecimiento con visión de largo plazo, integrando sostenibilidad", "Ejecutar el crecimiento sin planificación previa", "Maximizar las ventas del próximo mes", "Copiar el plan de expansión de un competidor"], "correctas": [0], "justificacion": "El roadmap prospectivo estructura fases de crecimiento con mirada de largo plazo e integra sostenibilidad. Es planificación estratégica orientada al futuro, no táctica de corto plazo."}, {"tema": "Monetización", "tipo": "single", "enunciado": "¿Por qué las plataformas digitales constituyen un modelo de monetización particularmente robusto en el largo plazo?", "opciones": ["Porque permiten generar múltiples flujos de ingresos a partir de la interacción de diferentes actores", "Porque tienen un único cliente que paga siempre lo mismo", "Porque no requieren mantenimiento tecnológico", "Porque eliminan la necesidad de crear valor"], "correctas": [0], "justificacion": "Las plataformas conectan múltiples actores (efecto red) y de esa interacción surgen varios flujos de ingresos (comisiones, suscripciones, publicidad, etc.). Esa diversidad las hace robustas frente al cambio."}, {"tema": "Ágil", "tipo": "single", "enunciado": "Un grupo de emprendedores trabaja en un dispositivo de salud. En cada entrega incremental testean nuevas funciones con usuarios y ajustan el diseño. ¿Qué objetivo principal busca este enfoque?", "opciones": ["Maximizar la entrega de valor frecuente", "Retrasar la entrega hasta tener el producto perfecto", "Evitar el contacto con los usuarios", "Documentar exhaustivamente antes de construir"], "correctas": [0], "justificacion": "Las entregas incrementales con testeo continuo buscan maximizar la entrega de valor frecuente: liberar valor seguido y aprender del usuario en cada ciclo, en vez de esperar un lanzamiento único y perfecto."}, {"tema": "Modelos Disruptivos", "tipo": "multi", "enunciado": "Selecciona 4. ¿Cuáles son los rasgos disruptivos de un emprendimiento que conecta directamente a productores locales con consumidores mediante una app de pedidos eficiente y de distribución compartida?", "opciones": ["Simplicidad en la conexión productor-consumidor", "Escalabilidad gracias a las redes digitales y logística compartida", "Resolver el JTBD de productores con canales de venta eficientes", "Competidores tradicionales que subestiman el interés de este nicho por su baja rentabilidad inicial", "Estrategia inicial enfocada en clientes de servicios premium desatendidos por los supermercados"], "correctas": [0, 1, 2, 3], "justificacion": "Los rasgos disruptivos son: simplicidad, escalabilidad (redes + logística compartida), resolver el Job To Be Done de los productores, e incumbentes que subestiman el nicho. La opción de 'clientes premium' es INCORRECTA: la disrupción ataca segmentos bajos/desatendidos, no premium."}, {"tema": "Modelos Disruptivos", "tipo": "single", "enunciado": "En un modelo de negocio disruptivo, ¿qué rol cumple la tecnología?", "opciones": ["Puede ser un habilitador, pero la clave está en el modelo de acceso y la propuesta de valor", "Es el único factor que determina el éxito", "No cumple ningún rol relevante", "Reemplaza completamente a la propuesta de valor"], "correctas": [0], "justificacion": "La tecnología HABILITA la disrupción, pero no es el corazón: lo central es cómo se accede al servicio y la propuesta de valor. La tech es medio, no fin."}, {"tema": "Comunicación Poderosa", "tipo": "single", "enunciado": "En una startup de salud, los roles se cruzan (medicina, diseño, informática). El equipo implementa reuniones breves donde cada miembro comunica sus avances de forma precisa y sin rodeos. ¿Qué característica de la comunicación poderosa está presente?", "opciones": ["Síntesis, transmitiendo lo esencial en poco tiempo", "Extensión, dando todos los detalles posibles", "Ambigüedad para dar libertad de interpretación", "Formalidad excesiva en el lenguaje"], "correctas": [0], "justificacion": "Comunicar lo esencial de forma precisa y breve es SÍNTESIS: transmitir lo importante en poco tiempo. Es lo opuesto a extenderse o dar rodeos."}, {"tema": "Pitch / Persuasión", "tipo": "single", "enunciado": "Ecovolt, una startup de energía renovable, presenta su proyecto a clientes industriales (pymes y grandes industrias). ¿Qué enfoque será más persuasivo?", "opciones": ["Reducir costos energéticos en el mediano plazo", "Destacar el diseño estético de los equipos", "Enfatizar el impacto emocional en los consumidores finales", "Mostrar la historia personal de los fundadores"], "correctas": [0], "justificacion": "A clientes INDUSTRIALES les importa el ahorro y la eficiencia económica: reducir costos energéticos es el argumento más persuasivo. Lo estético o emocional funciona con consumidores finales, no con industrias."}, {"tema": "Monetización", "tipo": "single", "enunciado": "¿Cuál es el riesgo principal de no considerar escenarios y futuro en la estrategia de monetización?", "opciones": ["Que las fuentes de ingresos pierdan relevancia o sostenibilidad frente a cambios de contexto", "Que aumenten demasiado las ganancias", "Que se simplifique excesivamente el modelo", "Que los clientes paguen de más"], "correctas": [0], "justificacion": "Sin mirar escenarios futuros, las fuentes de ingreso quedan obsoletas cuando cambia el contexto (tecnología, regulación, competencia). Pierden relevancia y sostenibilidad."}, {"tema": "Pitch / ASG", "tipo": "single", "enunciado": "¿Por qué integrar el enfoque ASG en un pitch fortalece la comunicación poderosa?", "opciones": ["Porque refuerza la relevancia del proyecto ante stakeholders sensibles con la temática", "Porque alarga la presentación con más datos", "Porque reemplaza la necesidad de mostrar rentabilidad", "Porque simplifica el mensaje eliminando el propósito"], "correctas": [0], "justificacion": "ASG (Ambiental, Social, Gobernanza) suma relevancia frente a stakeholders que valoran sostenibilidad e impacto. Conecta el proyecto con temas que les importan, fortaleciendo el mensaje."}, {"tema": "Modelos Disruptivos", "tipo": "single", "enunciado": "En la innovación disruptiva, ¿qué suele ocurrir en los mercados iniciales en los que se introducen las nuevas propuestas?", "opciones": ["Se dirigen a segmentos desatendidos o de bajo rendimiento para los líderes", "Se dirigen a los clientes más rentables del mercado", "Compiten directamente con los líderes en su terreno principal", "Se enfocan en el segmento de lujo"], "correctas": [0], "justificacion": "La disrupción entra por abajo: segmentos desatendidos o poco rentables que los líderes ignoran. Desde ahí escala. No arranca peleando de frente por los clientes premium."}, {"tema": "Ágil / Aprendizaje", "tipo": "multi", "enunciado": "Selecciona 3. ¿Cuáles son las prácticas esenciales en la cultura de aprendizaje continuo y de impacto en la implementación ágil?", "opciones": ["Recoger retroalimentación constante", "Documentar lecciones aprendidas", "Medir desempeño e iniciativas sostenibles", "Evitar la revisión de errores para no frenar el ritmo"], "correctas": [0, 1, 2], "justificacion": "El aprendizaje continuo se basa en: feedback constante, documentar lecciones aprendidas y medir desempeño/sostenibilidad. Evitar revisar errores va en contra de aprender."}, {"tema": "Monetización", "tipo": "single", "enunciado": "¿Cuál es el rol de la monetización como estrategia de futuro?", "opciones": ["Consiste en proyectar y diseñar fuentes de ingresos que permitan sostener el crecimiento en escenarios inciertos", "Consiste en fijar un precio único e inmutable", "Consiste en maximizar el ingreso del mes en curso", "Consiste en copiar el modelo de la competencia"], "correctas": [0], "justificacion": "Como estrategia de futuro, la monetización proyecta y diseña ingresos que sostengan el crecimiento incluso en contextos inciertos. Es prospectiva, no un precio fijo ni una mirada de corto plazo."}, {"tema": "Canvas / MdN", "tipo": "single", "enunciado": "¿Cuál es el rol del Canvas modelo de negocio cuando se lo utiliza como disparador en el proceso de innovación de MdN?", "opciones": ["Actúa como marco de referencia flexible para visualizar hipótesis y repensarlas", "Funciona como un contrato rígido que no puede modificarse", "Reemplaza toda investigación de mercado", "Sirve únicamente para presentar a inversores"], "correctas": [0], "justificacion": "El Canvas es un marco FLEXIBLE para visualizar y cuestionar hipótesis. Como disparador de innovación, ayuda a repensar el modelo, no a fijarlo de manera rígida."}, {"tema": "Pitch / Storytelling", "tipo": "single", "enunciado": "¿Qué pretende Mamotest (o cualquier emprendimiento) al incorporar storytelling en su pitch, destacando historias reales de mujeres que pudieron detectar su enfermedad en la plataforma?", "opciones": ["Fomentar confianza y conexión emocional profunda con potenciales pacientes", "Alargar la presentación para llenar tiempo", "Mostrar datos estadísticos complejos", "Evitar hablar del impacto real"], "correctas": [0], "justificacion": "El storytelling con historias reales genera confianza y conexión emocional. Humaniza el proyecto y hace tangible el impacto, algo que los datos solos no logran."}, {"tema": "Comunicación Corporativa", "tipo": "single", "enunciado": "La comunicación corporativa es esencial para transmitir el valor que genera un emprendimiento y atraer nuevas oportunidades.", "opciones": ["Verdadero", "Falso"], "correctas": [0], "justificacion": "Verdadero. La comunicación corporativa transmite el valor del emprendimiento hacia afuera y es clave para atraer clientes, socios, inversores y oportunidades."}, {"tema": "Monetización", "tipo": "single", "enunciado": "¿Qué característica distingue el modelo de ingresos pay-as-you-go frente a esquemas tradicionales de suscripción?", "opciones": ["El cobro basado en el uso real del servicio, otorgando flexibilidad al cliente", "El cobro de una cuota fija mensual sin importar el uso", "El pago único de por vida", "La ausencia total de cobro"], "correctas": [0], "justificacion": "Pay-as-you-go = pagás por lo que usás. Se cobra según el consumo real, dando flexibilidad. La suscripción, en cambio, cobra una cuota fija independiente del uso."}, {"tema": "Organización Teal", "tipo": "single", "enunciado": "¿Cuál de los siguientes principios describe con mayor precisión la noción de plenitud en una organización Teal?", "opciones": ["Promover que los individuos se presenten con su ser integral", "Exigir que separen su vida personal del trabajo", "Priorizar solo las competencias técnicas", "Estandarizar el comportamiento de todos los empleados"], "correctas": [0], "justificacion": "Plenitud (wholeness) en Teal significa que las personas llevan su SER INTEGRAL al trabajo: emociones, intuición, identidad completa, sin fragmentarse. No se trata de separar lo personal de lo profesional."}, {"tema": "Organización Teal", "tipo": "single", "enunciado": "¿Qué caracteriza una \"organización Teal\" según Laloux?", "opciones": ["Autogestión, propósito evolutivo y plenitud", "Jerarquía rígida, control y burocracia", "Máxima rentabilidad y competencia interna", "Centralización total de decisiones"], "correctas": [0], "justificacion": "Los tres pilares Teal de Laloux son: autogestión (self-management), propósito evolutivo (evolutionary purpose) y plenitud (wholeness). Es lo opuesto a la jerarquía rígida y burocrática."}, {"tema": "Modelos Disruptivos", "tipo": "single", "enunciado": "¿Cuál es una de las características más destacadas de un modelo de negocio disruptivo según Christensen?", "opciones": ["Ofrece soluciones más simples y accesibles para segmentos desatendidos", "Ofrece productos más caros y complejos para elites", "Compite en las mismas condiciones que los líderes", "Se enfoca en clientes de alta rentabilidad"], "correctas": [0], "justificacion": "Christensen: la disrupción ofrece soluciones más SIMPLES y ACCESIBLES para segmentos que los líderes desatienden. La simplicidad y accesibilidad son su marca, no la complejidad premium."}, {"tema": "Ágil / PDCA", "tipo": "multi", "enunciado": "El ciclo PDCA es útil para asegurar que las iteraciones incorporen mejoras. ¿A qué acciones responde esta sigla? Selecciona 2.", "opciones": ["Planificar y hacer", "Verificar y actuar", "Producir y descartar", "Priorizar y cancelar"], "correctas": [0, 1], "justificacion": "PDCA = Plan (Planificar), Do (Hacer), Check (Verificar), Act (Actuar). Las dos opciones correctas cubren los cuatro pasos: 'Planificar y hacer' + 'Verificar y actuar'."}, {"tema": "Modelos Disruptivos", "tipo": "multi", "enunciado": "Selecciona 4. Clínica Móvil ofrece atención médica básica en unidades móviles de bajo costo, apoyadas por telemedicina. ¿Qué elementos reflejan su carácter disruptivo?", "opciones": ["Escalabilidad al incorporar telemedicina y tecnología de diagnóstico remoto", "Incumbentes que no consideran atractivos esos mercados por baja rentabilidad", "Simplicidad al ofrecer servicios esenciales en formato directo", "Accesibilidad para comunidades rurales y barrios alejados", "Atención premium para clientes de alto poder adquisitivo para mantener su rentabilidad"], "correctas": [0, 1, 2, 3], "justificacion": "Rasgos disruptivos: escalabilidad (telemedicina), incumbentes que ignoran el mercado, simplicidad y accesibilidad para zonas desatendidas. La 'atención premium' es INCORRECTA: contradice la lógica disruptiva de servir segmentos bajos."}, {"tema": "Monetización", "tipo": "single", "enunciado": "GreenMobility opera una flota de scooters eléctricos y factura con tarifas distintas según zona horaria, por cada minuto de uso. ¿Qué modelo de ingresos utiliza?", "opciones": ["Pay-as-you-go, con facturación según consumo real", "Suscripción mensual fija", "Venta directa del scooter", "Freemium con funciones premium"], "correctas": [0], "justificacion": "Cobrar por minuto de uso real es Pay-as-you-go: el cliente paga exactamente lo que consume. No es suscripción fija ni venta del producto."}, {"tema": "Impacto", "tipo": "multi", "enunciado": "Selecciona 4. ¿Cuáles de las siguientes afirmaciones describen adecuadamente el concepto de impacto en la gestión de proyectos sostenibles?", "opciones": ["Pueden incluir dimensiones sociales, ambientales y de gobernanza", "Son transformaciones significativas y sostenibles en personas, comunidades o el entorno natural", "Se alinean con los Objetivos de Desarrollo Sostenible (ODS) y la Agenda 2030", "Implican cambios a largo plazo, como regeneración de ecosistemas o reducción de pobreza", "Son efectos de ASG que incluyen exclusivamente el desempeño económico"], "correctas": [0, 1, 2, 3], "justificacion": "El impacto incluye dimensiones sociales/ambientales/gobernanza, son transformaciones sostenibles, se alinean con los ODS y la Agenda 2030, e implican cambios de largo plazo. La opción 'exclusivamente económico' es INCORRECTA: el impacto NO se reduce a lo económico."}, {"tema": "Ágil", "tipo": "single", "enunciado": "¿Cuál es la diferencia central entre la planificación estratégica tradicional y la ejecución ágil?", "opciones": ["La agilidad permite ajustar constantemente frente al cambio", "La agilidad elimina toda forma de planificación", "La tradicional es más flexible que la ágil", "No existen diferencias entre ambas"], "correctas": [0], "justificacion": "La agilidad se ajusta constantemente ante el cambio, mientras la planificación tradicional es más rígida y secuencial. Ojo: ágil NO significa 'sin planificación', sino planificación adaptativa."}, {"tema": "Escalabilidad", "tipo": "multi", "enunciado": "Selecciona 4. ¿Qué elementos podrían aumentar el potencial de escalabilidad de una startup que ofrece movilidad urbana con bicicletas eléctricas compartidas a bajo costo?", "opciones": ["Propuesta centrada en accesibilidad para estudiantes y trabajadores", "Capacidad de aprendizaje del equipo sobre hábitos de movilidad", "Modelo adaptable a distintas ciudades", "Enfoque en reducir la dependencia del transporte contaminante", "Estrategia enfocada exclusivamente en un único barrio sin posibilidad de expansión"], "correctas": [0, 1, 2, 3], "justificacion": "Aumentan escalabilidad: accesibilidad amplia, capacidad de aprendizaje, adaptabilidad a varias ciudades y propósito de sustentabilidad. La opción de 'un único barrio sin expansión' LIMITA la escalabilidad, no la aumenta."}, {"tema": "Innovación Abierta", "tipo": "multi", "enunciado": "Selecciona 3. ¿Qué prácticas se relacionan con el enfoque de innovación abierta?", "opciones": ["Establecer alianzas con universidades y startups", "Licenciar tecnologías para generar nuevas oportunidades de negocio", "Compartir conocimiento en consorcios sectoriales", "Patentar productos para comercializarlos exclusivamente sin compartir con nadie"], "correctas": [0, 1, 2], "justificacion": "Innovación abierta = colaborar y compartir: alianzas con universidades/startups, licenciar tecnología y compartir en consorcios. Patentar para cerrar y NO compartir es lo opuesto (innovación cerrada)."}, {"tema": "Modelos Disruptivos", "tipo": "single", "enunciado": "Una startup ofrece una app gratuita para declaraciones impositivas de trabajadores independientes, financiada con publicidad digital. ¿Qué elemento posee como núcleo disruptivo de su modelo?", "opciones": ["La accesibilidad que genera al permitir que usuarios sin recursos para contratar contadores puedan resolver sus trámites", "El alto precio de la suscripción premium", "La exclusividad del servicio para grandes empresas", "La complejidad técnica de la plataforma"], "correctas": [0], "justificacion": "El núcleo disruptivo es la ACCESIBILIDAD: da acceso a un servicio (declaraciones) a gente que antes no podía pagar un contador. Democratiza un servicio antes reservado a quienes podían costearlo."}, {"tema": "Strategic Foresight", "tipo": "single", "enunciado": "Cuando Mamotest analiza desde un futuro posible (donde persisten desigualdades de salud) pasando por futuros plausibles y probables (con expansión regional) hasta el futuro preferible, ¿qué herramienta de Strategic Foresight está aplicando?", "opciones": ["Cono de futuros", "Balanced Scorecard", "Análisis FODA", "Diagrama de Gantt"], "correctas": [0], "justificacion": "El Cono de Futuros clasifica los futuros en posibles, plausibles, probables y preferibles. Ese recorrido de escenarios es exactamente lo que describe el caso."}, {"tema": "Sostenibilidad", "tipo": "single", "enunciado": "¿En qué puede verse, por ejemplo, el potencial regenerativo de un emprendimiento?", "opciones": ["En la capacidad de sus servicios de promover la reducción de la huella de carbono que generan", "En la cantidad de publicidad que produce", "En el aumento del consumo de recursos vírgenes", "En la maximización de residuos"], "correctas": [0], "justificacion": "El potencial regenerativo se ve cuando el emprendimiento no solo reduce daño sino que aporta positivamente, por ejemplo reduciendo la huella de carbono. Regenerar es dejar el entorno mejor que antes."}, {"tema": "Modelos Disruptivos", "tipo": "single", "enunciado": "Un emprendimiento quiere transformar la movilidad urbana con bicicletas eléctricas de bajo costo. Para diseñar un modelo de negocio disruptivo, ¿qué hipótesis debería validar prioritariamente?", "opciones": ["La disposición de pago de trabajadores con ingresos bajos", "El color preferido de las bicicletas", "La marca de los componentes electrónicos", "El nombre comercial del emprendimiento"], "correctas": [0], "justificacion": "La hipótesis de riesgo más crítica es si el segmento objetivo (trabajadores de bajos ingresos) está dispuesto a pagar. Sin eso, el modelo no funciona. Lo estético o el naming son secundarios."}, {"tema": "Design Sprint / Prospectiva", "tipo": "multi", "enunciado": "Un emprendimiento usa Design Sprint para proyectar sus desarrollos. ¿Qué técnicas podría combinar con esta metodología ágil para hacerla prospectiva? Selecciona 3.", "opciones": ["Identificación de tendencias tecnológicas y sociales", "Construcción de escenarios futuros plausibles", "Análisis de drivers de cambio y disrupciones", "Congelamiento de todas las variables del entorno"], "correctas": [0, 1, 2], "justificacion": "Para hacer prospectivo un Design Sprint se suman: detectar tendencias tech/sociales, construir escenarios futuros y analizar drivers de cambio. Congelar variables es lo contrario de pensar el futuro."}, {"tema": "Monetización", "tipo": "single", "enunciado": "¿Qué debe hacer una startup que busca ingresos sostenibles?", "opciones": ["Combinar distintos modelos de monetización adaptados a segmentos y escenarios futuros", "Depender de una única fuente de ingresos fija", "Ignorar los cambios del contexto", "Cobrar lo mismo a todos sin diferenciar"], "correctas": [0], "justificacion": "Ingresos sostenibles = diversificar y adaptar los modelos de monetización a distintos segmentos y escenarios futuros. Depender de una sola fuente es frágil ante cambios."}, {"tema": "Roadmap Sostenible", "tipo": "single", "enunciado": "¿Cuál de las siguientes fases corresponde a la construcción de un roadmap orientado a la sustentabilidad de un emprendimiento?", "opciones": ["Definición de hitos, recursos requeridos, alianzas clave y métricas de impacto", "Ejecución inmediata sin planificar hitos", "Copia del roadmap de la competencia", "Eliminación de toda métrica de impacto"], "correctas": [0], "justificacion": "Un roadmap sustentable define hitos, recursos, alianzas clave y métricas de impacto. Es planificación estructurada con foco en sostenibilidad, no ejecución improvisada."}, {"tema": "Financiamiento", "tipo": "single", "enunciado": "Un emprendimiento de alimentos sostenibles pretende financiar sus primeras etapas mediante aportes colectivos a cambio de productos futuros. ¿Qué estrategia aplica?", "opciones": ["Crowdfunding, porque sus aportes contribuyen económicamente a cambio de una recompensa", "Préstamo bancario tradicional", "Emisión de acciones en bolsa", "Venta de activos fijos"], "correctas": [0], "justificacion": "Aportes colectivos a cambio de productos futuros = Crowdfunding de recompensa. La comunidad financia el proyecto y recibe el producto como contraprestación."}, {"tema": "Métricas de Impacto", "tipo": "single", "enunciado": "¿Cuál de las siguientes métricas refleja tanto el desempeño operativo como el impacto social de Mamotest o cualquier emprendimiento de salud de la mujer?", "opciones": ["Cantidad de diagnósticos realizados y porcentaje de mujeres rurales con acceso a estudios", "Únicamente la facturación mensual", "Solo el número de empleados", "La cantidad de seguidores en redes sociales"], "correctas": [0], "justificacion": "Esta métrica combina lo operativo (diagnósticos realizados) con lo social (acceso de mujeres rurales). Captura ambas dimensiones, a diferencia de métricas puramente financieras o de vanidad."}, {"tema": "Prospectiva Estratégica", "tipo": "single", "enunciado": "¿Cuál es el rol de la prospectiva estratégica en la construcción de una narrativa de futuros deseables dentro de un roadmap?", "opciones": ["Anticipar desafíos y co-crear caminos de transformación estructural", "Predecir con exactitud el futuro", "Eliminar toda incertidumbre", "Mantener el statu quo sin cambios"], "correctas": [0], "justificacion": "La prospectiva estratégica no predice: anticipa desafíos y co-crea caminos de transformación. Ayuda a construir futuros deseables de forma colaborativa, no a adivinar."}, {"tema": "Pitch / Errores", "tipo": "single", "enunciado": "¿Cuál de los siguientes recursos suele ser un error común cuando se arma un pitch pretendiendo dotarlo de mayor contundencia?", "opciones": ["Lenguaje técnico excesivo", "Mensajes breves y claros", "Storytelling relevante", "Material visual simple"], "correctas": [0], "justificacion": "El exceso de lenguaje técnico es un error clásico: aleja a la audiencia y oscurece el mensaje. Un buen pitch usa lenguaje claro, síntesis y storytelling, no jerga."}, {"tema": "Pitch", "tipo": "multi", "enunciado": "¿Qué recursos ayudan a captar y mantener la atención de stakeholders en un pitch? Selecciona 4.", "opciones": ["Mensajes breves y enfocados", "Material visual claro y simple", "Storytelling relevante", "Propósito claro del proyecto", "Datos descontextualizados"], "correctas": [0, 1, 2, 3], "justificacion": "Captan atención: mensajes breves, visuales claros, storytelling y propósito claro. Los 'datos descontextualizados' son un ERROR: confunden en lugar de convencer."}, {"tema": "Balanced Scorecard", "tipo": "single", "enunciado": "¿Para qué se utiliza el Balanced Scorecard (BSC)?", "opciones": ["Gestionar proyectos desde cuatro perspectivas integradas", "Evaluar únicamente la resiliencia organizacional a largo plazo", "Medir solo los resultados financieros", "Reemplazar la planificación estratégica"], "correctas": [0], "justificacion": "El BSC gestiona desde 4 perspectivas integradas: financiera, clientes, procesos internos y aprendizaje/crecimiento. Su valor es el balance entre esas dimensiones, no una sola."}, {"tema": "Indicadores Prospectivos", "tipo": "single", "enunciado": "Una cooperativa agrícola implementa un programa de reciclaje y compostaje para reducir su huella ecológica y cerrar ciclos productivos. ¿Qué indicador prospectivo es más relevante?", "opciones": ["Indicadores de circularidad, porque miden la reutilización de materiales y reducción de recursos vírgenes", "Indicadores de rentabilidad trimestral", "Indicadores de participación de mercado", "Indicadores de rotación de personal"], "correctas": [0], "justificacion": "Cerrar ciclos productivos y reciclar se mide con indicadores de CIRCULARIDAD: reutilización de materiales y menor uso de recursos vírgenes. Se alinean con economía circular."}, {"tema": "Prospectiva / Ágil", "tipo": "single", "enunciado": "¿Cuál es la función principal de integrar prospectiva estratégica a la gestión ágil?", "opciones": ["Alinear cada iteración con horizontes futuros plausibles y deseables", "Eliminar las iteraciones cortas", "Enfocarse solo en el presente inmediato", "Reducir la planificación a un único escenario"], "correctas": [0], "justificacion": "Integrar prospectiva a lo ágil alinea cada iteración (sprint) con futuros plausibles y deseables. Combina el corto plazo ágil con la visión de largo plazo."}, {"tema": "Pitch Prospectivo", "tipo": "multi", "enunciado": "¿Cuáles de los siguientes elementos fortalecen un pitch prospectivo? Selecciona 4.", "opciones": ["Escenarios de tendencias futuras", "Propósito claro y alineado", "Métricas de impacto ASG", "Datos financieros proyectados en escenarios", "Uso de explicaciones técnicas excesivas"], "correctas": [0, 1, 2, 3], "justificacion": "Fortalecen un pitch prospectivo: escenarios futuros, propósito claro, métricas ASG y proyecciones financieras. Las 'explicaciones técnicas excesivas' debilitan, no fortalecen."}, {"tema": "Ágil / Sprints", "tipo": "single", "enunciado": "¿Cuál es la función de aplicar ciclos cortos como sprints en la implementación ágil de un proyecto?", "opciones": ["Crear sensación de urgencia y ritmo de trabajo", "Extender indefinidamente los plazos", "Evitar la entrega de resultados", "Eliminar la revisión del progreso"], "correctas": [0], "justificacion": "Los sprints generan ritmo y foco (sensación de urgencia productiva), forzando entregas frecuentes y revisiones periódicas. Mantienen el impulso del equipo."}, {"tema": "Métricas", "tipo": "single", "enunciado": "Una startup de salud digital mide la cantidad de consultas virtuales realizadas, pero necesita demostrar cambios en la calidad de vida de los pacientes. ¿Qué debería medir?", "opciones": ["Outcome (resultado / cambio generado)", "EVM (Earned Value Management)", "La cantidad de descargas de la app", "El número de servidores utilizados"], "correctas": [0], "justificacion": "Las consultas realizadas son un OUTPUT (actividad). El cambio en calidad de vida es un OUTCOME (resultado/impacto). Para demostrar transformación real hay que medir outcomes, no solo outputs."}, {"tema": "Esperanza Activa", "tipo": "single", "enunciado": "¿Qué rol cumple la esperanza activa en la puesta en marcha de un emprendimiento o proyecto?", "opciones": ["Es un facilitador clave en la construcción de futuros posibles", "Es un obstáculo para la planificación", "Reemplaza la necesidad de acción concreta", "Solo aplica a proyectos personales"], "correctas": [0], "justificacion": "La esperanza activa combina visión positiva con acción concreta: es un motor que facilita construir futuros posibles. No es pasividad optimista, sino impulso para actuar."}, {"tema": "Monetización / Circular", "tipo": "single", "enunciado": "¿Cuál de los siguientes patrones de monetización se considera más alineado con un enfoque de economía circular y sostenibilidad a futuro?", "opciones": ["Suscripción al acceso a productos o servicios compartidos", "Venta masiva de productos descartables", "Producción de bienes de un solo uso", "Modelo basado en obsolescencia programada"], "correctas": [0], "justificacion": "La suscripción al ACCESO (product-as-a-service, uso compartido) alarga la vida útil y reduce el consumo, alineado con economía circular. La venta de descartables u obsolescencia van en contra."}, {"tema": "KPI vs KVI", "tipo": "multi", "enunciado": "Respecto a las diferencias entre KPI y KVI en emprendimientos sostenibles, ¿cuáles afirmaciones son correctas?", "opciones": ["Tanto KPI como KVI pueden aplicarse en startups y organizaciones de distintos tamaños, aunque su foco y diseño varíen", "Los KVI permiten a los líderes preguntarse cuánto aporta cada parte del negocio al valor", "Los KVI son prospectivos y se enfocan en la creación de valor a futuro", "Los KPI miden desempeño operativo y aseguran que 'el motor funcione'"], "correctas": [0, 1, 2, 3], "justificacion": "Las cuatro son correctas. KPI (Key Performance Indicators) miden desempeño operativo presente ('que el motor funcione'). KVI (Key Value Indicators) son prospectivos y miden creación de valor futuro. Ambos aplican a cualquier tamaño de organización."}, {"tema": "Teoría del Cambio", "tipo": "single", "enunciado": "Cuando empresas de biotecnología o bioconsumo afirman que sus actividades de investigación y alianzas productivas generan un impacto determinado, ¿qué lógica están aplicando?", "opciones": ["La lógica de la teoría del cambio", "La lógica del análisis FODA", "La lógica del Balanced Scorecard", "La lógica del diagrama de Gantt"], "correctas": [0], "justificacion": "Conectar actividades (investigación, alianzas) con resultados e impacto esperado es la Teoría del Cambio: describe cómo y por qué las acciones llevan al cambio deseado."}, {"tema": "SROI", "tipo": "single", "enunciado": "Una startup de educación digital reporta inscripciones y NPS, pero un inversor de impacto exige evidencias del valor social generado en el mediano plazo. ¿Qué enfoque debería priorizar?", "opciones": ["Implementar el SROI para traducir impactos sociales en valor monetario", "Aumentar solo el gasto en publicidad", "Reportar más métricas de vanidad", "Reducir la medición de impacto"], "correctas": [0], "justificacion": "El SROI (Social Return On Investment) traduce el impacto social a valor monetario, permitiendo demostrar retorno a inversores de impacto. Inscripciones y NPS no capturan el valor social real."}, {"tema": "Metodologías Ágiles", "tipo": "multi", "enunciado": "¿Cuáles son metodologías ágiles que pueden combinarse con prospectiva para la implementación de un emprendimiento o propuesta de valor?", "opciones": ["Lean Startup", "Scrum", "Kanban", "OKR"], "correctas": [0, 1, 2, 3], "justificacion": "Las cuatro son metodologías/marcos ágiles combinables con prospectiva: Lean Startup, Scrum, Kanban y OKR. Todas favorecen iteración, adaptación y foco."}, {"tema": "Monetización", "tipo": "single", "enunciado": "Los ingresos de cualquier emprendimiento deben tener su foco exclusivamente en las ganancias económicas y en la rentabilidad.", "opciones": ["Falso", "Verdadero"], "correctas": [0], "justificacion": "Falso. En emprendimientos sostenibles los ingresos deben equilibrar rentabilidad con impacto social y ambiental. El foco no es SOLO económico: la sostenibilidad integra las tres dimensiones."}, {"tema": "Monetización", "tipo": "multi", "enunciado": "BioPrint produce prótesis y dispositivos médicos impresos en 3D. ¿Cuáles serían 4 estrategias viables y coherentes para diversificar la monetización a futuro?", "opciones": ["Venta directa a hospitales con margen por unidad", "Licenciamiento de diseños a fabricantes locales para producción distribuida", "Suscripción de mantenimiento y actualizaciones de software/hardware", "Leasing/arrendamiento de equipos", "Regalar todos los productos sin ningún esquema de ingreso"], "correctas": [0, 1, 2, 3], "justificacion": "Estrategias viables: venta directa, licenciamiento de diseños, suscripción de mantenimiento y leasing. Regalar todo sin ingreso NO es una estrategia de monetización viable."}, {"tema": "Escalabilidad", "tipo": "single", "enunciado": "¿Cuál de los siguientes factores es determinante para que un modelo disruptivo logre escalabilidad efectiva en mercados con altas barreras de entrada?", "opciones": ["La construcción de una red de usuarios o plataformas apoyadas en tecnologías que amplifiquen su alcance", "La reducción del número de usuarios", "El aumento de las barreras internas del propio modelo", "La limitación a un solo mercado geográfico"], "correctas": [0], "justificacion": "Construir una red de usuarios/plataformas con tecnología que amplifique el alcance (efecto red) permite escalar aún con altas barreras. La masa crítica y la tech son las palancas de escala."}, {"tema": "Indicadores de Resiliencia", "tipo": "single", "enunciado": "¿Cuál es el propósito principal de los indicadores de resiliencia en la evaluación prospectiva de un emprendimiento?", "opciones": ["Medir la capacidad de absorber impactos internos y adaptarse a cambios drásticos del entorno", "Medir únicamente el crecimiento de ventas", "Medir la cantidad de empleados", "Medir el reconocimiento de marca"], "correctas": [0], "justificacion": "Los indicadores de resiliencia miden la capacidad de absorber shocks y adaptarse a cambios drásticos. Evalúan qué tan bien el emprendimiento resiste y se recupera de perturbaciones."}, {"tema": "Roadmap / Tensiones", "tipo": "single", "enunciado": "El emprendimiento ComunidadSolar ofrece energía solar comunitaria. Al planear su crecimiento identifica tensiones entre costo y acceso. ¿Qué debería priorizar?", "opciones": ["Diseñar un esquema de tarifas progresivas para mantener accesibilidad", "Subir los precios para todos por igual", "Atender solo a clientes de alto poder adquisitivo", "Eliminar el acceso a comunidades vulnerables"], "correctas": [0], "justificacion": "Ante la tensión costo-acceso, las tarifas progresivas (pagar según capacidad) permiten sostener el negocio sin perder accesibilidad. Resuelve el dilema equilibrando ambos objetivos."}, {"tema": "Modelos Disruptivos / Christensen", "tipo": "single", "enunciado": "Según Christensen, ¿por qué suelen fallar los incumbentes frente a la disrupción?", "opciones": ["Se enfocan en mejorar continuamente sus productos para sus clientes más rentables", "Prestan demasiada atención a los segmentos bajos", "Innovan de forma excesivamente disruptiva", "Abandonan a sus clientes más rentables"], "correctas": [0], "justificacion": "El 'dilema del innovador' de Christensen: los incumbentes mejoran sus productos para sus mejores clientes (sostienen) e ignoran los segmentos bajos, donde entra la disrupción. Su racionalidad los ciega ante la amenaza."}, {"tema": "Roadmap Sostenible", "tipo": "single", "enunciado": "Un emprendimiento de agricultura regenerativa analiza mercados internacionales. Según un roadmap sostenible, ¿qué factor debería incluir primero?", "opciones": ["Cumplimiento de estándares ambientales globales que demuestren la adopción de prácticas reales", "El menor precio posible sin importar el impacto", "La expansión sin certificaciones", "La reducción de la calidad para bajar costos"], "correctas": [0], "justificacion": "Para entrar a mercados internacionales de forma sostenible, primero hay que cumplir estándares ambientales globales (certificaciones) que prueben prácticas reales. Es la llave de acceso y credibilidad."}, {"tema": "Modelo Híbrido", "tipo": "single", "enunciado": "Una startup social busca ser económicamente sostenible. ¿Qué modelo la refleja mejor?", "opciones": ["Un modelo híbrido donde la venta de productos financia el impacto", "Un modelo 100% filantrópico sin ingresos", "Un modelo que ignora el impacto social", "Un modelo que depende solo de donaciones"], "correctas": [0], "justificacion": "Una empresa social sostenible usa un modelo HÍBRIDO: genera ingresos comerciales (venta de productos) que financian su misión de impacto. Combina viabilidad económica con propósito social."}, {"tema": "Monetización / Freemium", "tipo": "single", "enunciado": "Un emprendimiento educativo ofrece contenidos gratuitos para estudiantes y vende paquetes avanzados con analíticas y herramientas administrativas a universidades y colegios. ¿Cuál es su estrategia de monetización?", "opciones": ["Freemium, porque mantiene el acceso gratuito al usuario final y vende licencias institucionales con funciones premium", "Pay-as-you-go puro", "Venta única de software", "Modelo exclusivamente publicitario"], "correctas": [0], "justificacion": "Gratis para el usuario final + premium pago para instituciones = Freemium. La base gratuita atrae usuarios y las funciones avanzadas se monetizan con quien puede pagarlas."}, {"tema": "Pitch", "tipo": "single", "enunciado": "La startup UniPay desarrolla una billetera digital para estudiantes universitarios. En un pitch ante inversores ángeles, ¿en qué debería enfatizar?", "opciones": ["En el tamaño del mercado universitario y su escalabilidad", "En los detalles técnicos del código de la app", "En la historia personal de cada fundador", "En el color de la interfaz"], "correctas": [0], "justificacion": "A inversores ángeles les interesa el POTENCIAL: tamaño de mercado y escalabilidad. Es lo que determina el retorno. Los detalles técnicos o estéticos no son el foco de un pitch de inversión."}, {"tema": "Pitch / Sinek", "tipo": "single", "enunciado": "Según Sinek, en un pitch efectivo, iniciar con datos técnicos detallados es más persuasivo que comenzar con el propósito del emprendimiento.", "opciones": ["Falso", "Verdadero"], "correctas": [0], "justificacion": "Falso. Sinek (Círculo Dorado) sostiene que hay que empezar por el PORQUÉ (propósito), no por el qué o el cómo técnico. El propósito conecta emocionalmente y es más persuasivo."}, {"tema": "Modelos Disruptivos", "tipo": "multi", "enunciado": "Una startup ofrece filtros de agua de bajo costo impresos en 3D para comunidades rurales. ¿Qué rasgos de disrupción están presentes? (marcá los correctos)", "opciones": ["Resuelve el problema desatendido del acceso a agua potable", "Incumbentes que no consideran rentable atender comunidades rurales", "Simplicidad y conveniencia en el uso de los filtros", "Escalabilidad gracias a impresión 3D distribuida", "Apunta a un JTBD atendido en hogares de altos recursos"], "correctas": [0, 1, 2, 3], "justificacion": "Rasgos disruptivos: resuelve un problema desatendido (agua potable), incumbentes que ignoran el mercado rural, simplicidad y escalabilidad por impresión 3D. La opción de 'hogares de altos recursos' es INCORRECTA: la disrupción apunta a un JTBD DESATENDIDO en hogares de bajos recursos."}, {"tema": "5CCP", "tipo": "single", "enunciado": "¿Cuál de las 5CCP se centra en transformar problemas en oportunidades y animar a superar límites con creatividad?", "opciones": ["Retadora", "Analítica", "Conservadora", "Pasiva"], "correctas": [0], "justificacion": "La competencia RETADORA transforma problemas en oportunidades e impulsa a superar límites con creatividad. Desafía el statu quo y busca ir más allá."}, {"tema": "Monetización / Precio", "tipo": "single", "enunciado": "¿Por qué autores como Ramanujam y Tacke afirman que muchas innovaciones fracasan en el mercado, incluso si son técnicamente útiles?", "opciones": ["Porque el precio se fija sin considerar el valor real que el cliente está dispuesto a pagar", "Porque son demasiado baratas", "Porque tienen exceso de publicidad", "Porque no usan suficiente tecnología"], "correctas": [0], "justificacion": "Ramanujam y Tacke ('Monetizing Innovation'): las innovaciones fracasan porque se diseñan primero y se piensa el precio al final, sin validar la disposición a pagar. Hay que hablar del precio ANTES de construir."}, {"tema": "Pitch / Persuasión", "tipo": "single", "enunciado": "El proyecto AgroBio+ desarrolla biofertilizantes regenerativos. Frente a un fondo de impacto, ¿qué combinación es más persuasiva?", "opciones": ["Propósito ambiental + beneficios sociales para agricultores + relaciones transparentes con proveedores", "Solo el margen de ganancia proyectado", "Únicamente los detalles químicos del producto", "La cantidad de empleados de la empresa"], "correctas": [0], "justificacion": "A un FONDO DE IMPACTO le importa la triple dimensión: ambiental (propósito), social (agricultores) y gobernanza (transparencia con proveedores). Esa combinación ASG es lo más persuasivo."}, {"tema": "Ágil", "tipo": "single", "enunciado": "En la implementación de proyectos, aplicar metodologías ágiles significa descartar la planificación estratégica, ya que la adaptabilidad reemplaza por completo la necesidad de definir misión, visión y objetivos.", "opciones": ["Falso", "Verdadero"], "correctas": [0], "justificacion": "Falso. Ágil NO elimina la planificación estratégica: sigue necesitando misión, visión y objetivos. Lo que cambia es que la ejecución se adapta iterativamente. Estrategia y agilidad coexisten."}, {"tema": "Pitch / Propósito", "tipo": "single", "enunciado": "¿Cuál de los siguientes aspectos corresponde a la comunicación con propósito en un pitch?", "opciones": ["Transmitir el impacto social y ambiental", "Enfocarse solo en los números financieros", "Ocultar la misión del proyecto", "Priorizar el lenguaje técnico"], "correctas": [0], "justificacion": "La comunicación con propósito transmite el impacto social y ambiental del proyecto: el 'para qué' más allá de lo económico. Conecta con el sentido, no solo con las cifras."}, {"tema": "Comunicación / Pitch", "tipo": "single", "enunciado": "Una startup prepara su pitch incorporando preguntas abiertas al público. ¿Qué habilidad comunicativa clave está integrando?", "opciones": ["Presentación interactiva y participativa para conocer las expectativas del público", "Monólogo unidireccional sin interrupciones", "Lectura literal de diapositivas", "Exposición puramente técnica"], "correctas": [0], "justificacion": "Las preguntas abiertas hacen la presentación INTERACTIVA y participativa: involucran al público y permiten conocer sus expectativas. Rompen con el monólogo tradicional."}, {"tema": "Crowdfunding", "tipo": "multi", "enunciado": "Selecciona 4. A partir de su conceptualización, ¿cuáles de las siguientes afirmaciones describen adecuadamente las características del crowdfunding?", "opciones": ["Se presenta en diferentes modalidades como donación, recompensa, préstamo colectivo o participación accionaria", "Permite financiar proyectos a través de la suma de múltiples aportes pequeños, generalmente gestionados mediante plataformas digitales", "Su éxito depende en gran medida de la capacidad del proyecto para comunicar su propuesta de valor y generar confianza en la comunidad de aportantes", "Ha impulsado plataformas especializadas que permiten a emprendedores de diversos rubros acercar sus iniciativas a potenciales financiadores", "Requiere obligatoriamente el respaldo de un banco tradicional para funcionar"], "correctas": [0, 1, 2, 3], "justificacion": "Crowdfunding: varias modalidades (donación/recompensa/préstamo/acciones), suma de aportes pequeños vía plataformas, depende de comunicar valor y generar confianza, e impulsó plataformas especializadas. NO requiere un banco tradicional: justamente lo desintermedia."}, {"tema": "Tres Horizontes", "tipo": "single", "enunciado": "En la lógica de los tres horizontes de innovación, ¿qué caracteriza al Horizonte 3?", "opciones": ["Transformaciones de largo plazo alineadas con el propósito", "La optimización del negocio actual", "Mejoras incrementales de corto plazo", "El mantenimiento del statu quo"], "correctas": [0], "justificacion": "Horizonte 3 (H3) representa la innovación transformadora de largo plazo, alineada con el propósito. H1 es el negocio actual, H2 son las oportunidades emergentes, H3 es la visión disruptiva futura."}, {"tema": "Arquetipos de Futuro", "tipo": "single", "enunciado": "Una startup de movilidad diseña bicicletas eléctricas compartidas y considera distintos arquetipos de futuros. Si adopta el arquetipo de Continuación, ¿qué acción reflejaría mejor esa lógica?", "opciones": ["La optimización de la cadena de mantenimiento y la ampliación gradual de su flota", "La transformación radical de todo su modelo de negocio", "El abandono completo del negocio actual", "La disrupción total del mercado"], "correctas": [0], "justificacion": "El arquetipo de CONTINUACIÓN implica seguir mejorando lo existente de forma gradual: optimizar mantenimiento y ampliar la flota poco a poco. La transformación radical correspondería a otro arquetipo (Transformación), no a Continuación."}, {"tema": "Ágil / Lean", "tipo": "single", "enunciado": "Una startup de experiencias culturales virtuales dedica el mínimo tiempo a documentos extensos y el máximo a programar y testear prototipos con usuarios. ¿Qué característica principal refleja este enfoque?", "opciones": ["Orientación a resultados y aprendizaje con usuarios", "Orientación a la documentación exhaustiva", "Aversión al contacto con usuarios", "Priorización de procesos sobre resultados"], "correctas": [0], "justificacion": "Priorizar prototipar y testear con usuarios sobre documentar es orientación a RESULTADOS y aprendizaje. Refleja el valor ágil de 'software funcionando sobre documentación exhaustiva'."}, {"tema": "Escalabilidad / Tensiones", "tipo": "single", "enunciado": "¿Cuál es una de las tensiones más comunes en la búsqueda de escalabilidad sostenible?", "opciones": ["Dilema entre rentabilidad rápida y desarrollo sostenible", "Falta total de clientes", "Exceso de recursos financieros", "Ausencia de competencia"], "correctas": [0], "justificacion": "La tensión clásica es rentabilidad rápida vs. desarrollo sostenible: crecer rápido puede sacrificar sostenibilidad, y priorizar sostenibilidad puede ralentizar el retorno. Equilibrarlas es el desafío."}, {"tema": "Comunicación No Verbal", "tipo": "single", "enunciado": "¿Qué técnicas potencian la comunicación no verbal en un pitch?", "opciones": ["Postura abierta y contacto visual", "Brazos cruzados y mirada esquiva", "Lectura fija de las diapositivas", "Postura rígida sin movimiento"], "correctas": [0], "justificacion": "La postura abierta y el contacto visual transmiten seguridad y conexión, potenciando la comunicación no verbal. Los brazos cruzados o la mirada esquiva comunican cierre y desconfianza."}, {"tema": "Ágil", "tipo": "single", "enunciado": "La planificación de un emprendimiento termina en su implementación y evaluación, aplicando agilidad en todo su proceso de diseño.", "opciones": ["Verdadero", "Falso"], "correctas": [0], "justificacion": "Verdadero. El proceso ágil abarca todo el ciclo: planificar, implementar y evaluar, con iteración y adaptación en cada fase. La agilidad atraviesa todo el diseño, no una etapa aislada."}, {"tema": "Monetización / Plataforma", "tipo": "single", "enunciado": "Una startup mantiene su app gratuita para usuarios que sincronizan wearables y, además, un marketplace donde fabricantes venden dispositivos y profesionales ofrecen servicios. ¿Cuál es el núcleo de su modelo de monetización?", "opciones": ["Plataforma multilateral", "Venta única de productos", "Suscripción individual simple", "Pay-as-you-go puro"], "correctas": [0], "justificacion": "Conectar múltiples grupos (usuarios, fabricantes, profesionales) que interactúan y transaccionan es una PLATAFORMA MULTILATERAL (multi-sided). El valor surge de facilitar esas conexiones entre varios lados."}, {"tema": "Cono de Futuros", "tipo": "multi", "enunciado": "¿Cuáles son los beneficios de aplicar el cono de futuros en la implementación de proyectos? Selecciona 4.", "opciones": ["Evitar que la organización pierda relevancia en entornos cambiantes", "Facilitar la selección de proyectos de innovación", "Priorizar iniciativas según su potencial en distintos futuros", "Mantener el backlog enfocado estratégicamente", "Establecer un único escenario futuro probable"], "correctas": [0, 1, 2, 3], "justificacion": "El cono de futuros: mantiene relevancia, facilita selección de proyectos, prioriza según potencial en varios futuros y enfoca el backlog. Establecer 'un único escenario' es INCORRECTO: el cono trabaja con MÚLTIPLES futuros, no uno solo."}, {"tema": "Comunicación Poderosa", "tipo": "single", "enunciado": "¿Por qué la comunicación poderosa se considera un potenciador de liderazgo en startups?", "opciones": ["Transforma la mentalidad y potencia el talento", "Reemplaza la necesidad de tener un equipo", "Elimina la toma de decisiones", "Reduce la motivación del equipo"], "correctas": [0], "justificacion": "La comunicación poderosa transforma mentalidades y potencia el talento del equipo. Es un multiplicador del liderazgo: inspira, alinea y saca lo mejor de las personas."}, {"tema": "Prospectiva / Sprints", "tipo": "single", "enunciado": "¿Qué práctica debería priorizar en cada sprint una startup de economía circular que desarrolla envases biodegradables, al integrar prospectiva estratégica en su gestión ágil?", "opciones": ["Evaluar cómo se corresponden con futuras regulaciones ambientales", "Ignorar las tendencias regulatorias", "Enfocarse solo en el precio de venta actual", "Evitar toda consideración ambiental"], "correctas": [0], "justificacion": "Integrar prospectiva en cada sprint implica evaluar cómo el producto responderá a futuras regulaciones ambientales. Anticiparse al marco normativo evita quedar obsoleto y aprovecha oportunidades."}, {"tema": "Modelos Disruptivos", "tipo": "single", "enunciado": "En un modelo de negocio disruptivo, ¿qué rol cumple la tecnología? (segunda versión)", "opciones": ["Puede ser habilitador, pero la clave es el modelo de valor", "Es el único determinante del éxito", "No tiene relevancia alguna", "Sustituye a la propuesta de valor"], "correctas": [0], "justificacion": "La tecnología habilita, pero lo central es el MODELO DE VALOR (cómo se crea, entrega y captura valor). La tech es un medio para potenciar el modelo, no el fin en sí mismo."}, {"tema": "Empresa Regenerativa", "tipo": "single", "enunciado": "Está diseñando el roadmap de un emprendimiento que busca escalar su producción agroecológica. Si quisiera evaluar la adopción del enfoque de empresa regenerativa, ¿qué decisión debería tomar?", "opciones": ["Adoptar agricultura regenerativa", "Maximizar el uso de agroquímicos", "Priorizar el monocultivo intensivo", "Reducir la biodiversidad del suelo"], "correctas": [0], "justificacion": "El enfoque de empresa regenerativa en el agro se materializa en agricultura regenerativa: prácticas que restauran el suelo, aumentan biodiversidad y capturan carbono. Es lo opuesto a agroquímicos y monocultivo."}, {"tema": "Diversificación", "tipo": "multi", "enunciado": "Selecciona 2. ¿Qué podría hacer una plataforma dedicada a alojamientos en pueblos para diversificar su propuesta y obtener otros ingresos ante posibles cambios en el panorama de la empresa?", "opciones": ["Crear experiencias turísticas adicionales para clientes existentes", "Ofrecer paquetes combinados con productos locales", "Reducir la oferta a un solo alojamiento", "Eliminar toda relación con la comunidad local"], "correctas": [0, 1], "justificacion": "Diversificar aprovechando su base: crear experiencias turísticas y ofrecer paquetes con productos locales suma ingresos y valor. Reducir la oferta o cortar con la comunidad va en contra de diversificar."}, {"tema": "Ágil / Autoorganización", "tipo": "single", "enunciado": "Un emprendimiento de economía social se organiza en equipos pequeños y multidisciplinarios que se autoorganizan para diseñar y testear soluciones. ¿Por qué se puede afirmar que siguen principios de agilidad?", "opciones": ["Porque favorecen la autoorganización y el empoderamiento de equipos diversos", "Porque centralizan todas las decisiones en un líder", "Porque evitan el trabajo en equipo", "Porque siguen jerarquías rígidas"], "correctas": [0], "justificacion": "La autoorganización y el empoderamiento de equipos multidisciplinarios son principios ágiles centrales. Los equipos deciden y se coordinan sin depender de mando central, ganando velocidad y adaptación."}, {"tema": "Círculo Dorado / Sinek", "tipo": "single", "enunciado": "¿Qué elemento del Círculo Dorado está más relacionado con la diferenciación y la conexión emocional?", "opciones": ["El Por qué", "El Qué", "El Cómo", "El Cuándo"], "correctas": [0], "justificacion": "En el Círculo Dorado de Sinek, el POR QUÉ (propósito/creencia) genera diferenciación y conexión emocional. La gente compra el 'por qué', no el 'qué'. El Qué y el Cómo son más racionales/funcionales."}, {"tema": "Canvas", "tipo": "single", "enunciado": "¿Cuál es un componente clave de la Propuesta de Valor en el Canvas?", "opciones": ["El conjunto de productos/servicios que crean valor para un segmento", "La lista de proveedores de la empresa", "El organigrama interno", "El plan de recursos humanos"], "correctas": [0], "justificacion": "La Propuesta de Valor en el Canvas es el conjunto de productos/servicios que crean valor para un segmento específico de clientes. Responde a qué problema resuelve y por qué el cliente lo elige."}, {"tema": "Lean Startup / Hipótesis", "tipo": "single", "enunciado": "Un equipo está validando un alquiler de bicis eléctricas. ¿Cuál es la hipótesis de riesgo a validar primero?", "opciones": ["Los usuarios están dispuestos a pagar por el servicio en lugar del transporte público", "El color de las bicicletas", "El nombre de la app", "El diseño del logo"], "correctas": [0], "justificacion": "La hipótesis de mayor riesgo es la disposición a pagar frente a la alternativa (transporte público). Si los usuarios no pagan, el modelo cae. Es lo primero a validar según Lean Startup."}, {"tema": "Design Thinking / Ideación", "tipo": "single", "enunciado": "¿Qué elemento es fundamental en la fase de \"Ideación\" para evitar el juicio prematuro?", "opciones": ["El pensamiento divergente y la suspensión de la crítica", "La evaluación inmediata de cada idea", "El descarte rápido de propuestas", "La convergencia temprana"], "correctas": [0], "justificacion": "En Ideación se busca generar muchas ideas: el pensamiento DIVERGENTE y suspender la crítica evita matar ideas antes de tiempo. Juzgar temprano frena la creatividad; la evaluación viene después."}, {"tema": "Design Thinking / Mapa de Empatía", "tipo": "single", "enunciado": "¿Qué busca representar el \"Mapa de Empatía\" dentro del Design Thinking?", "opciones": ["Lo que el usuario siente, ve, oye, dice y hace para profundizar en sus necesidades", "El balance financiero de la empresa", "El cronograma del proyecto", "La estructura de costos"], "correctas": [0], "justificacion": "El Mapa de Empatía captura qué el usuario siente, ve, oye, dice, hace (y sus dolores/ganancias) para entender profundamente sus necesidades. Es una herramienta de comprensión del usuario, no financiera."}, {"tema": "Lean Startup / Pivot", "tipo": "single", "enunciado": "En el contexto de la metodología Lean Startup, el \"Pivot\" se define como:", "opciones": ["Un cambio estratégico diseñado para probar una nueva hipótesis sobre el producto o modelo de negocio", "El abandono definitivo del proyecto", "Un cambio de nombre comercial", "La contratación de nuevo personal"], "correctas": [0], "justificacion": "El Pivot es un cambio estratégico de rumbo para probar una nueva hipótesis, manteniendo la base aprendida. No es abandonar ni un cambio cosmético: es reorientar el modelo según el aprendizaje validado."}, {"tema": "Prospectiva / Señales Débiles", "tipo": "single", "enunciado": "Una cooperativa agrícola utiliza prospectiva para detectar señales débiles de clima. Esto permite:", "opciones": ["Adaptar sus procesos antes de que las crisis sean irreversibles", "Ignorar los cambios climáticos", "Reaccionar solo cuando la crisis ya ocurrió", "Eliminar toda planificación futura"], "correctas": [0], "justificacion": "Detectar señales débiles permite anticiparse: adaptar procesos ANTES de que la crisis sea irreversible. La prospectiva convierte indicios tempranos en acción preventiva."}, {"tema": "Organización Teal / Propósito Evolutivo", "tipo": "single", "enunciado": "¿Qué implica el Propósito Evolutivo en una organización Teal?", "opciones": ["Escuchar hacia dónde quiere ir la organización de forma orgánica", "Fijar un objetivo inmutable para siempre", "Seguir órdenes de la alta gerencia", "Maximizar únicamente las ganancias"], "correctas": [0], "justificacion": "El Propósito Evolutivo (Teal) implica escuchar y sentir hacia dónde 'quiere ir' la organización de forma orgánica, dejando que el propósito evolucione. No es un objetivo fijo impuesto desde arriba."}, {"tema": "Indicadores de Resiliencia", "tipo": "single", "enunciado": "Si una startup quiere medir su habilidad para sostenerse frente a perturbaciones externas, ¿qué indicador usa?", "opciones": ["Indicadores de resiliencia", "El crecimiento porcentual de ventas trimestrales", "El número de empleados", "La cantidad de publicaciones en redes"], "correctas": [0], "justificacion": "Para medir la capacidad de sostenerse ante perturbaciones externas se usan indicadores de RESILIENCIA. Ojo con el distractor del crecimiento de ventas: mide trayectoria, no resiliencia ante shocks. (Este ítem estaba marcado como respuesta corregida en el examen.)"}];
+
+const STORAGE_KEY = 'quiz_2p_emprendimientos_v1';
+
+let state = {
+  screen: 'start',
+  mode: 'all',
+  queue: [],
+  currentIdx: 0,
+  answered: {},   // idx -> {selected:[], correct:bool}
+  aciertos: 0,
+  fallos: 0,
+  puntos: 0,
+  retryMode: false,
+};
+
+// Historial en localStorage
+function loadHist() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function saveHist(qKey, correct) {
+  try {
+    const h = loadHist();
+    if (!h[qKey]) h[qKey] = {ok:0, bad:0};
+    if (correct) h[qKey].ok++; else h[qKey].bad++;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(h));
+  } catch(e) {}
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Clave estable por pregunta (para el histórico)
+function qKeyOf(q) { return q.enunciado.slice(0, 50); }
+
+// Devuelve las preguntas ordenadas de más floja a menos floja segun el historico
+function getFlojas() {
+  const h = loadHist();
+  const scored = BANK.map((q, i) => {
+    const rec = h[qKeyOf(q)] || {ok:0, bad:0};
+    const total = rec.ok + rec.bad;
+    // ratio de fallo; sin datos = neutro-alto para que aparezcan
+    const failRate = total > 0 ? rec.bad / total : 0.5;
+    return { q, i, failRate, bad: rec.bad, total };
+  });
+  // Solo las que tienen al menos un fallo, ordenadas por peor ratio y más fallos
+  return scored
+    .filter(s => s.bad > 0)
+    .sort((a, b) => (b.failRate - a.failRate) || (b.bad - a.bad));
+}
+
+// ---- Render pantalla inicio ----
+function renderStart() {
+  const app = document.getElementById('app');
+  const flojas = getFlojas();
+  const hayFlojas = flojas.length > 0;
+
+  app.innerHTML = `
+    <div class="start">
+      <h1>Quiz 2P · Emprendimientos Universitarios</h1>
+      <p class="sub">${BANK.length} preguntas</p>
+      <div class="mode-grid">
+        <div class="mode-card" id="modeAll">
+          <div class="mode-ico">📚</div>
+          <div class="mode-title">Todas las preguntas</div>
+          <div class="mode-desc">Las ${BANK.length} preguntas en orden aleatorio</div>
+        </div>
+        <div class="mode-card" id="modeRandom">
+          <div class="mode-ico">🎲</div>
+          <div class="mode-title">20 preguntas al azar</div>
+          <div class="mode-desc">Una selección rápida de 20 preguntas</div>
+        </div>
+        <div class="mode-card ${hayFlojas ? '' : 'disabled'}" id="modeFlojas">
+          <div class="mode-ico">🎯</div>
+          <div class="mode-title">Repetir las más flojas</div>
+          <div class="mode-desc">${hayFlojas ? flojas.length + ' preguntas donde más fallaste' : 'Todavía no tenés fallos registrados'}</div>
+        </div>
+        <div class="mode-card secondary" id="modeStats">
+          <div class="mode-ico">📊</div>
+          <div class="mode-title">Rendimiento</div>
+          <div class="mode-desc">Histórico de tus respuestas</div>
+        </div>
+      </div>
+      <p class="hint">🔀 El orden de preguntas y opciones se mezcla cada vez.<br>
+      🔁 Al terminar podés reintentar solo las que fallaste.<br>
+      💾 El histórico se guarda en tu navegador (descargá el archivo y abrilo localmente para que persista).</p>
+    </div>
+  `;
+
+  document.getElementById('modeAll').addEventListener('click', () => startQuiz('all'));
+  document.getElementById('modeRandom').addEventListener('click', () => startQuiz('random'));
+  if (hayFlojas) {
+    document.getElementById('modeFlojas').addEventListener('click', () => startQuiz('flojas'));
+  }
+  document.getElementById('modeStats').addEventListener('click', renderStats);
+}
+
+function startQuiz(mode) {
+  let pool;
+  if (mode === 'flojas') {
+    const flojas = getFlojas();
+    pool = flojas.map(s => ({...s.q}));
+    pool = shuffle(pool);
+  } else {
+    pool = shuffle(BANK.map(q => ({...q})));
+    if (mode === 'random') {
+      pool = pool.slice(0, 20);
+    }
+  }
+  state.mode = mode;
+  state.queue = pool.map(q => prepQuestion(q));
+  state.currentIdx = 0;
+  state.answered = {};
+  state.aciertos = 0;
+  state.fallos = 0;
+  state.puntos = 0;
+  state.retryMode = false;
+  state.screen = 'quiz';
+  renderQuiz();
+}
+
+// ---- Pantalla de rendimiento / histórico ----
+function renderStats() {
+  const app = document.getElementById('app');
+  const h = loadHist();
+  const rows = BANK.map(q => {
+    const rec = h[qKeyOf(q)] || {ok:0, bad:0};
+    const total = rec.ok + rec.bad;
+    const acc = total > 0 ? Math.round((rec.ok / total) * 100) : null;
+    return { enunciado: q.enunciado, tema: q.tema, ok: rec.ok, bad: rec.bad, total, acc };
+  });
+
+  const respondidas = rows.filter(r => r.total > 0);
+  const totalOk = respondidas.reduce((s, r) => s + r.ok, 0);
+  const totalBad = respondidas.reduce((s, r) => s + r.bad, 0);
+  const totalResp = totalOk + totalBad;
+  const globalAcc = totalResp > 0 ? Math.round((totalOk / totalResp) * 100) : 0;
+
+  // Ordenar: peores primero (las respondidas), luego las sin datos
+  respondidas.sort((a, b) => (a.acc - b.acc) || (b.bad - a.bad));
+  const sinDatos = rows.filter(r => r.total === 0);
+
+  let tableRows = '';
+  if (respondidas.length === 0) {
+    tableRows = `<tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8">
+      Todavía no respondiste ninguna pregunta. Hacé un quiz y volvé acá.</td></tr>`;
+  } else {
+    tableRows = respondidas.map(r => {
+      let accClass = 'acc-mid';
+      if (r.acc >= 70) accClass = 'acc-hi';
+      else if (r.acc < 40) accClass = 'acc-lo';
+      return `<tr>
+        <td class="q-cell">${r.enunciado}</td>
+        <td style="text-align:center"><span class="tema-mini">${r.tema}</span></td>
+        <td style="text-align:center;white-space:nowrap">
+          <span style="color:#22c55e">${r.ok}✓</span> /
+          <span style="color:#ef4444">${r.bad}✗</span>
+        </td>
+        <td style="text-align:center"><span class="acc-pill ${accClass}">${r.acc}%</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  app.innerHTML = `
+    <div class="topbar">
+      <h1>📊 Rendimiento · Histórico</h1>
+      <span class="rep">${respondidas.length} de ${BANK.length} preguntas respondidas</span>
+    </div>
+    <div class="statsbar">
+      <div class="item ac"><span class="num">${totalOk}</span> Aciertos totales</div>
+      <div class="item fa"><span class="num">${totalBad}</span> Fallos totales</div>
+      <div class="item pt"><span class="num">${globalAcc}%</span> Acierto global</div>
+    </div>
+    <div class="stats-body">
+      <div class="stats-toolbar">
+        <span class="stats-note">Ordenado de menor a mayor acierto. Rojo = repasar.</span>
+        <button class="btn btn-skip" id="resetHistBtn">🗑 Borrar histórico</button>
+      </div>
+      <div class="table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Pregunta</th>
+              <th style="text-align:center">Tema</th>
+              <th style="text-align:center">Ok / Fallo</th>
+              <th style="text-align:center">Acierto</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+      ${sinDatos.length > 0 ? `<p class="stats-note" style="margin-top:14px">
+        Quedan ${sinDatos.length} preguntas que todavía no respondiste.</p>` : ''}
+      <div class="actions" style="margin-top:20px">
+        <button class="btn btn-answer" id="backBtn">← Volver al inicio</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    state.screen = 'start';
+    renderStart();
+  });
+  document.getElementById('resetHistBtn').addEventListener('click', () => {
+    if (confirm('¿Seguro que querés borrar todo el histórico de respuestas? No se puede deshacer.')) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+      renderStats();
+    }
+  });
+}
+
+function prepQuestion(q) {
+  // Mapear opciones con índice original y mezclar
+  const opts = q.opciones.map((txt, i) => ({txt, origIdx: i, correct: q.correctas.includes(i)}));
+  const shuffled = shuffle(opts);
+  return {
+    tema: q.tema,
+    tipo: q.tipo,
+    enunciado: q.enunciado,
+    justificacion: q.justificacion,
+    opts: shuffled,
+    numCorrect: q.correctas.length,
+    qKey: q.enunciado.slice(0, 50),
+    userSelected: [],
+    isAnswered: false,
+    wasCorrect: null,
+  };
+}
+
+// ---- Render quiz ----
+function renderQuiz() {
+  const q = state.queue[state.currentIdx];
+  const app = document.getElementById('app');
+  const total = state.queue.length;
+
+  const sideItems = state.queue.map((qq, i) => {
+    let cls = 'pending', ico = '○';
+    if (qq.isAnswered) {
+      if (qq.wasCorrect) { cls = 'ok'; ico = '✓'; }
+      else { cls = 'bad'; ico = '✗'; }
+    }
+    if (i === state.currentIdx) cls += ' current';
+    return `<div class="qlist-item ${cls}" data-goto="${i}">
+      <span class="ico">${ico}</span>
+      <span>Pregunta ${i+1}</span>
+    </div>`;
+  }).join('');
+
+  const optsHtml = q.opts.map((o, i) => {
+    let cls = 'opt';
+    if (q.tipo === 'multi') cls += ' multi';
+    if (q.userSelected.includes(i)) cls += ' selected';
+    if (q.isAnswered) {
+      if (o.correct) cls += ' correct';
+      else if (q.userSelected.includes(i)) cls += ' wrong';
+    }
+    let markerContent = '';
+    if (q.isAnswered) {
+      if (o.correct) markerContent = '✓';
+      else if (q.userSelected.includes(i)) markerContent = '✗';
+    } else if (q.userSelected.includes(i)) {
+      markerContent = q.tipo === 'multi' ? '✓' : '●';
+    }
+    return `<div class="${cls}" data-opt="${i}">
+      <div class="marker">${markerContent}</div>
+      <div class="otext">${o.txt}</div>
+    </div>`;
+  }).join('');
+
+  const multiBadge = q.tipo === 'multi'
+    ? `<span class="multi-badge">Selección múltiple · ${q.numCorrect} correctas</span>` : '';
+
+  app.innerHTML = `
+    <div class="topbar">
+      <h1>Quiz 2P · Emprendimientos ${state.retryMode ? '· 🔁 Reintento' : ''}</h1>
+      <span class="rep">Pregunta ${state.currentIdx+1} de ${total}</span>
+    </div>
+    <div class="statsbar">
+      <div class="item ac"><span class="num">${state.aciertos}</span> Aciertos</div>
+      <div class="item fa"><span class="num">${state.fallos}</span> Fallos</div>
+      <div class="item pt"><span class="num">${state.puntos}</span> Puntos</div>
+    </div>
+    <div class="main">
+      <div class="qzone">
+        <div>
+          <span class="tema-badge">${q.tema}</span>${multiBadge}
+        </div>
+        <div class="qtext">${q.enunciado}</div>
+        <div class="options" id="options">${optsHtml}</div>
+        <div class="justif ${q.isAnswered ? 'show' : ''}" id="justif">
+          <div class="jt">${q.wasCorrect ? '✓ Correcto' : '✗ Para que quede claro'}</div>
+          ${q.justificacion}
+        </div>
+        <div class="actions">
+          ${q.isAnswered
+            ? `<button class="btn btn-next" id="nextBtn">${state.currentIdx < total-1 ? 'Siguiente →' : 'Ver resultados'}</button>`
+            : `<button class="btn btn-postpone" id="postponeBtn">⏭ Posponer</button>
+               <button class="btn btn-skip" id="skipBtn">No contestar</button>
+               <button class="btn btn-answer" id="answerBtn">Contestar</button>`
+          }
+        </div>
+      </div>
+      <div class="sidepanel">
+        <h3>Cuestiones</h3>
+        ${sideItems}
+      </div>
+    </div>
+  `;
+
+  if (!q.isAnswered) {
+    document.getElementById('options').addEventListener('click', (e) => {
+      const optEl = e.target.closest('.opt');
+      if (!optEl) return;
+      const idx = parseInt(optEl.dataset.opt);
+      if (q.tipo === 'single') {
+        q.userSelected = [idx];
+      } else {
+        const pos = q.userSelected.indexOf(idx);
+        if (pos >= 0) q.userSelected.splice(pos, 1);
+        else q.userSelected.push(idx);
+      }
+      renderQuiz();
+    });
+    document.getElementById('answerBtn').addEventListener('click', () => {
+      if (q.userSelected.length === 0) return;
+      answerQuestion();
+    });
+    document.getElementById('postponeBtn').addEventListener('click', postpone);
+    document.getElementById('skipBtn').addEventListener('click', () => {
+      q.userSelected = [];
+      answerQuestion();
+    });
+  } else {
+    document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+  }
+
+  document.querySelectorAll('.qlist-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const goto = parseInt(el.dataset.goto);
+      state.currentIdx = goto;
+      renderQuiz();
+    });
+  });
+}
+
+function answerQuestion() {
+  const q = state.queue[state.currentIdx];
+  // Verificar: correcto si el set de seleccionadas == set de correctas
+  const correctSet = new Set(q.opts.map((o,i) => o.correct ? i : -1).filter(i => i>=0));
+  const selSet = new Set(q.userSelected);
+  let correct = correctSet.size === selSet.size &&
+                [...correctSet].every(i => selSet.has(i));
+  q.isAnswered = true;
+  q.wasCorrect = correct;
+  if (correct) {
+    state.aciertos++;
+    state.puntos += 10;
+  } else {
+    state.fallos++;
+    state.puntos = Math.max(0, state.puntos - 3);
+  }
+  saveHist(q.qKey, correct);
+  renderQuiz();
+}
+
+function postpone() {
+  if (state.queue.length <= 1) return;
+  const q = state.queue.splice(state.currentIdx, 1)[0];
+  state.queue.push(q);
+  if (state.currentIdx >= state.queue.length) state.currentIdx = 0;
+  renderQuiz();
+}
+
+function nextQuestion() {
+  if (state.currentIdx < state.queue.length - 1) {
+    state.currentIdx++;
+    renderQuiz();
+  } else {
+    showResults();
+  }
+}
+
+// ---- Resultados ----
+function showResults() {
+  state.screen = 'results';
+  const total = state.queue.length;
+  const answered = state.queue.filter(q => q.isAnswered);
+  const correct = state.queue.filter(q => q.wasCorrect).length;
+  const wrong = answered.length - correct;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  const app = document.getElementById('app');
+  const hasWrong = state.queue.some(q => q.isAnswered && !q.wasCorrect);
+
+  app.innerHTML = `
+    <div class="results">
+      <h1>Resultados</h1>
+      <div class="score-circle">
+        <span class="pct">${pct}%</span>
+        <span class="lbl">de acierto</span>
+      </div>
+      <div class="res-detail">
+        <div class="rd"><div class="n" style="color:#22c55e">${correct}</div><div class="l">Correctas</div></div>
+        <div class="rd"><div class="n" style="color:#ef4444">${wrong}</div><div class="l">Incorrectas</div></div>
+        <div class="rd"><div class="n" style="color:#0C3F52">${state.puntos}</div><div class="l">Puntos</div></div>
+      </div>
+      <div class="actions" style="justify-content:center">
+        ${hasWrong ? `<button class="btn btn-answer" id="retryWrongBtn">🔁 Reintentar las que fallé</button>` : ''}
+        <button class="btn btn-next" id="newQuizBtn">Nuevo quiz</button>
+      </div>
+    </div>
+  `;
+
+  if (hasWrong) {
+    document.getElementById('retryWrongBtn').addEventListener('click', retryWrong);
+  }
+  document.getElementById('newQuizBtn').addEventListener('click', () => {
+    state.screen = 'start';
+    renderStart();
+  });
+}
+
+function retryWrong() {
+  const wrongQs = state.queue.filter(q => q.isAnswered && !q.wasCorrect);
+  // Re-preparar (re-mezclar opciones) desde el banco original
+  const reprep = wrongQs.map(wq => {
+    const orig = BANK.find(b => b.enunciado === wq.enunciado);
+    return prepQuestion({...orig});
+  });
+  state.queue = shuffle(reprep);
+  state.currentIdx = 0;
+  state.aciertos = 0;
+  state.fallos = 0;
+  state.puntos = 0;
+  state.retryMode = true;
+  state.screen = 'quiz';
+  renderQuiz();
+}
+
+// Init
+renderStart();
+</script>
+</body>
+</html>
